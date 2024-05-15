@@ -1,43 +1,43 @@
 [package]
-name = "arch-audit"
-version = "0.1.20"
 authors = ["Andrea Scarpino <andrea@scarpino.dev>"]
-description = "A utility like pkg-audit for Arch Linux based on Arch Security Team data"
-repository = "https://gitlab.com/ilpianista/arch-audit"
-license = "MIT"
-readme = "README.md"
 categories = ["command-line-utilities"]
-keywords = ["archlinux", "security"]
+description = "A utility like pkg-audit for Arch Linux based on Arch Security Team data"
 edition = "2018"
+keywords = ["archlinux", "security"]
+license = "MIT"
+name = "arch-audit"
+readme = "README.md"
+repository = "https://gitlab.com/ilpianista/arch-audit"
+version = "0.1.20"
 
 [[bin]]
 name = "arch-audit"
 
 [dependencies]
-alpm = "^2.0"
-anyhow = "^1.0"
-atty = "^0.2"
-reqwest = { version = "^0.11", default-features = false, features = ["rustls-tls-native-roots", "socks", "gzip", "brotli"] }
-tokio = { version = "^1", features = ["macros", "rt-multi-thread"] }
-env_logger = "^0.9"
-log = "^0.4"
-serde = { version = "^1.0", features = ["derive"] }
-serde_json = "^1.0"
-term = "^0.7"
-structopt = "^0.3"
-strum = "^0.21"
-strum_macros = "^0.21"
-url = "^2.2"
-lazy_static = "^1.4"
-toml = "^0.5"
-dirs-next = "^2.0"
+alpm = "3"
+anyhow = "1"
+atty = "0"
+dirs-next = "2"
+env_logger = "0"
+lazy_static = "1"
+log = "0"
+reqwest = {version = "0", default-features = false, features = ["rustls-tls-native-roots", "socks", "gzip", "brotli"]}
+serde = {version = "1", features = ["derive"]}
+serde_json = "1"
+structopt = "0"
+strum = "0"
+strum_macros = "0"
+term = "0"
+tokio = {version = "1", features = ["macros", "rt-multi-thread"]}
+toml = "0"
+url = "2"
 
 [dev-dependencies]
-tempfile = "^3.2"
+tempfile = "3"
 
 [features]
 git = ["alpm/git"]
 
 [profile.release]
-lto = true
 codegen-units = 1
+lto = true

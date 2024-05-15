@@ -40,7 +40,7 @@ async fn main() {
     }
 }
 
-fn retain_only_relevant_avgs_and_packages(avgs: &mut Avgs, args: &Args, db: Db) {
+fn retain_only_relevant_avgs_and_packages(avgs: &mut Avgs, args: &Args, db: &Db) {
     for avg in &mut avgs.avgs {
         if avg.status == Status::NotAffected {
             // if arch isn't affected, no package is going to affect our system
@@ -148,7 +148,7 @@ async fn fetch_avg_json(url: &Url, config: &Config) -> Result<String> {
     Ok(json)
 }
 
-fn get_required_by(db: Db, pkg: &str) -> Vec<String> {
+fn get_required_by(db: &Db, pkg: &str) -> Vec<String> {
     db.pkg(pkg)
         .unwrap()
         .required_by()
@@ -157,7 +157,7 @@ fn get_required_by(db: Db, pkg: &str) -> Vec<String> {
         .collect()
 }
 
-fn get_required_by_recursive(db: Db, pkg: &str) -> Vec<String> {
+fn get_required_by_recursive(db: &Db, pkg: &str) -> Vec<String> {
     let mut pkgs = Vec::new();
     let mut seen = HashSet::new();
     _get_required_by_recursive(db, pkg, &mut pkgs, &mut seen);
@@ -165,7 +165,7 @@ fn get_required_by_recursive(db: Db, pkg: &str) -> Vec<String> {
 }
 
 fn _get_required_by_recursive(
-    db: alpm::Db,
+    db: &alpm::Db,
     pkg: &str,
     pkgs: &mut Vec<String>,
     seen: &mut HashSet<String>,
@@ -183,7 +183,7 @@ fn _get_required_by_recursive(
 }
 
 /// Given a package and the `fixed` version, returns true if the system is affected
-fn system_is_affected(db: Db, pkg: &str, fixed: &Option<String>) -> bool {
+fn system_is_affected(db: &Db, pkg: &str, fixed: &Option<String>) -> bool {
     let pkg = if let Ok(pkg) = db.pkg(pkg) {
         info!(
             "Found installed version {} for package {}",
@@ -196,12 +196,10 @@ fn system_is_affected(db: Db, pkg: &str, fixed: &Option<String>) -> bool {
         return false;
     };
 
-    if let Some(ref fixed) = fixed {
+    fixed.as_ref().map_or(true, |fixed| {
         info!("Comparing with fixed version {}", fixed);
         pkg.version() < Version::new(fixed.clone())
-    } else {
-        true
-    }
+    })
 }
 
 /// Given a `Status` return if it should be shown based on the status and passed `Options`
@@ -225,7 +223,7 @@ fn print_affected(
     options: &Args,
     t: &mut term::StdoutTerminal,
     aff: &Affected,
-    db: Db,
+    db: &Db,
 ) -> Result<()> {
     match aff.fixed {
         Some(ref v) => {
@@ -280,7 +278,7 @@ fn print_affected(
 }
 
 // Print a list of Affected
-fn print_all_affected(options: &Args, affected: &BTreeMap<&str, Affected>, db: Db) -> Result<()> {
+fn print_all_affected(options: &Args, affected: &BTreeMap<&str, Affected>, db: &Db) -> Result<()> {
     let fake_term = TermInfo {
         names: vec![],
         bools: HashMap::new(),
@@ -288,11 +286,13 @@ fn print_all_affected(options: &Args, affected: &BTreeMap<&str, Affected>, db: D
         strings: HashMap::new(),
     };
 
-    let mut t = match term::stdout() {
-        Some(x) => x,
-        None => Box::new(TerminfoTerminal::new_with_terminfo(io::stdout(), fake_term))
-            as Box<StdoutTerminal>,
-    };
+    let mut t = term::stdout().map_or_else(
+        || {
+            Box::new(TerminfoTerminal::new_with_terminfo(io::stdout(), fake_term))
+                as Box<StdoutTerminal>
+        },
+        |x| x,
+    );
 
     let mut affected = affected.values().into_iter().collect::<Vec<&Affected>>();
     sort_affected(&mut affected, &options.sort);
@@ -309,7 +309,7 @@ fn print_affected_colored(
     t: &mut term::StdoutTerminal,
     aff: &Affected,
     options: &Args,
-    db: Db,
+    db: &Db,
 ) -> Result<()> {
     // Bold package
     write_with_colours(t, &aff.package, options, None, Some(term::Attr::Bold))?;
@@ -363,7 +363,7 @@ fn print_affected_formatted(
     aff: &Affected,
     options: &Args,
     f: &str,
-    db: Db,
+    db: &Db,
 ) -> Result<()> {
     let mut chars = f.chars().peekable();
 
